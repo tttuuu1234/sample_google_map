@@ -54,14 +54,15 @@ class MapSampleState extends State<MapSample> {
 
       positionStream = Geolocator.getPositionStream(
         locationSettings: locationSettings,
-      ).listen(
-        (position) {
-          currentPosition = position;
-          print(
-            '${position.latitude.toString()}, ${position.longitude.toString()}',
-          );
-        },
-      );
+      ).listen((position) {
+        currentPosition = position;
+        print(
+          '${position.latitude.toString()}, ${position.longitude.toString()}',
+        );
+      }, onError: (error) {
+        print('エラーです');
+        print(error);
+      });
     });
   }
 
@@ -86,16 +87,21 @@ class MapSampleState extends State<MapSample> {
 
   /// 現在地をカメラで画面中央に表示させる
   Future<void> _zoomCameraLocationToCenter() async {
-    await _controller.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(
-            currentPosition == null ? 0 : currentPosition!.latitude,
-            currentPosition == null ? 0 : currentPosition!.longitude,
+    try {
+      await _controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(
+              currentPosition == null ? 0 : currentPosition!.latitude,
+              currentPosition == null ? 0 : currentPosition!.longitude,
+            ),
+            zoom: 14,
           ),
-          zoom: 14,
         ),
-      ),
-    );
+      );
+    } on Exception catch (e) {
+      print('エラーーーーー');
+      print(e);
+    }
   }
 }
