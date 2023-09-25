@@ -11,9 +11,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Flutter Google Maps Demo',
-      home: MapSample(),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const MapSample(),
     );
   }
 }
@@ -53,7 +57,9 @@ class MapSampleState extends State<MapSample> {
       ).listen(
         (position) {
           currentPosition = position;
-          print('${position.latitude.toString()}, ${position.longitude.toString()}');
+          print(
+            '${position.latitude.toString()}, ${position.longitude.toString()}',
+          );
         },
       );
     });
@@ -61,13 +67,35 @@ class MapSampleState extends State<MapSample> {
 
   @override
   Widget build(BuildContext context) {
-    return GoogleMap(
-      mapType: MapType.normal,
-      initialCameraPosition: _kGooglePlex,
-      myLocationEnabled: true,
-      onMapCreated: (GoogleMapController controller) {
-        _controller = controller;
-      },
+    return Scaffold(
+      body: GoogleMap(
+        mapType: MapType.normal,
+        initialCameraPosition: _kGooglePlex,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
+        onMapCreated: (GoogleMapController controller) {
+          _controller = controller;
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async => await _zoomCameraLocationToCenter(),
+        child: const Icon(Icons.location_on),
+      ),
+    );
+  }
+
+  /// 現在地をカメラで画面中央に表示させる
+  Future<void> _zoomCameraLocationToCenter() async {
+    await _controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(
+            currentPosition == null ? 0 : currentPosition!.latitude,
+            currentPosition == null ? 0 : currentPosition!.longitude,
+          ),
+          zoom: 14,
+        ),
+      ),
     );
   }
 }
