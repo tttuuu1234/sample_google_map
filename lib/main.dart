@@ -36,7 +36,7 @@ class MapSampleState extends State<MapSample> {
   //初期位置
   final _kGooglePlex = const CameraPosition(
     target: LatLng(35.604560, 140.123154),
-    zoom: 14,
+    zoom: 16,
   );
   final locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.high,
@@ -74,6 +74,24 @@ class MapSampleState extends State<MapSample> {
         initialCameraPosition: _kGooglePlex,
         myLocationEnabled: true,
         myLocationButtonEnabled: false,
+        markers: {
+          const Marker(
+            markerId: MarkerId('test1'),
+            position: LatLng(
+              35.701314,
+              140.029601,
+            ),
+            infoWindow: InfoWindow(title: '交差点です'),
+            zIndex: 100,
+          ),
+          const Marker(
+            markerId: MarkerId('test2'),
+            position: LatLng(
+              35.698905419103,
+              140.0310452971,
+            ),
+          ),
+        },
         onMapCreated: (GoogleMapController controller) {
           _controller = controller;
         },
@@ -90,12 +108,14 @@ class MapSampleState extends State<MapSample> {
     try {
       await _controller.animateCamera(
         CameraUpdate.newCameraPosition(
-          CameraPosition(
+          const CameraPosition(
             target: LatLng(
-              currentPosition == null ? 0 : currentPosition!.latitude,
-              currentPosition == null ? 0 : currentPosition!.longitude,
+              // currentPosition == null ? 0 : currentPosition!.latitude,
+              35.701314,
+              // currentPosition == null ? 0 : currentPosition!.longitude,
+              140.029601,
             ),
-            zoom: 14,
+            zoom: 16,
           ),
         ),
       );
