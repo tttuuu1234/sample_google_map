@@ -31,6 +31,7 @@ class MapSample extends StatefulWidget {
 
 class MapSampleState extends State<MapSample> {
   Position? currentPosition;
+  BitmapDescriptor customMarkerIcon = BitmapDescriptor.defaultMarker;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
   //初期位置
@@ -45,7 +46,16 @@ class MapSampleState extends State<MapSample> {
 
   @override
   void initState() {
-    super.initState();
+    // BitmapDescriptor.fromAssetImage(
+    //   const ImageConfiguration(size: Size(10, 10)),
+    //   'assets/S__300580868.jpg',
+    // ).then((value) {
+    //   setState(() {
+    //     print('成功');
+    //     print(value);
+    //     customMarkerIcon = value;
+    //   });
+    // });
     Future(() async {
       final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -64,6 +74,7 @@ class MapSampleState extends State<MapSample> {
         print(error);
       });
     });
+    super.initState();
   }
 
   @override
@@ -75,14 +86,15 @@ class MapSampleState extends State<MapSample> {
         myLocationEnabled: true,
         myLocationButtonEnabled: false,
         markers: {
-          const Marker(
-            markerId: MarkerId('test1'),
-            position: LatLng(
+          Marker(
+            markerId: const MarkerId('test1'),
+            position: const LatLng(
               35.701314,
               140.029601,
             ),
-            infoWindow: InfoWindow(title: '交差点です'),
-            zIndex: 100,
+            infoWindow: const InfoWindow(title: '交差点です'),
+            draggable: true,
+            icon: customMarkerIcon,
           ),
           const Marker(
             markerId: MarkerId('test2'),
