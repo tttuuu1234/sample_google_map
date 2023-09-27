@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -32,8 +33,10 @@ class MapSample extends StatefulWidget {
 class MapSampleState extends State<MapSample> {
   Position? currentPosition;
   BitmapDescriptor customMarkerIcon = BitmapDescriptor.defaultMarker;
+  late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
+  final apiKey = const String.fromEnvironment('iosGoogleMapApiKey');
   //初期位置
   final _kGooglePlex = const CameraPosition(
     target: LatLng(35.604560, 140.123154),
@@ -56,6 +59,7 @@ class MapSampleState extends State<MapSample> {
     //     customMarkerIcon = value;
     //   });
     // });
+    textEditingController = TextEditingController();
     Future(() async {
       final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -80,33 +84,75 @@ class MapSampleState extends State<MapSample> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GoogleMap(
-        mapType: MapType.normal,
-        initialCameraPosition: _kGooglePlex,
-        myLocationEnabled: true,
-        myLocationButtonEnabled: false,
-        markers: {
-          Marker(
-            markerId: const MarkerId('test1'),
-            position: const LatLng(
-              35.701314,
-              140.029601,
-            ),
-            infoWindow: const InfoWindow(title: '交差点です'),
-            draggable: true,
-            icon: customMarkerIcon,
+      body: Stack(
+        alignment: Alignment.center,
+        children: [
+          GoogleMap(
+            mapType: MapType.normal,
+            initialCameraPosition: _kGooglePlex,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            onTap: (argument) {
+              print('タップしました');
+            },
+            markers: {
+              Marker(
+                markerId: const MarkerId('test1'),
+                position: const LatLng(
+                  35.701314,
+                  140.029601,
+                ),
+                infoWindow: const InfoWindow(title: '交差点です'),
+                draggable: true,
+                icon: customMarkerIcon,
+              ),
+              const Marker(
+                markerId: MarkerId('test2'),
+                position: LatLng(
+                  35.698905419103,
+                  140.0310452971,
+                ),
+              ),
+            },
+            onMapCreated: (GoogleMapController controller) {
+              _controller = controller;
+            },
           ),
-          const Marker(
-            markerId: MarkerId('test2'),
-            position: LatLng(
-              35.698905419103,
-              140.0310452971,
+          Positioned(
+            top: 80,
+            child: Container(
+              width: MediaQuery.sizeOf(context).width * 0.9,
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: const [
+                  BoxShadow(
+                    spreadRadius: 0.5,
+                    blurRadius: 3,
+                    color: Colors.grey,
+                    offset: Offset(1, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: textEditingController,
+                maxLines: 1,
+                decoration: InputDecoration(
+                  hintText: 'ここで検索',
+                  prefixIcon: const Icon(Icons.pin_drop),
+                  suffixIcon: const Icon(Icons.mic),
+                  fillColor: Colors.white,
+                  filled: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              ),
             ),
           ),
-        },
-        onMapCreated: (GoogleMapController controller) {
-          _controller = controller;
-        },
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async => await _zoomCameraLocationToCenter(),
