@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 
 void main() => runApp(const MyApp());
 
@@ -33,6 +34,8 @@ class MapSample extends StatefulWidget {
 class MapSampleState extends State<MapSample> {
   Position? currentPosition;
   BitmapDescriptor customMarkerIcon = BitmapDescriptor.defaultMarker;
+  bool isShowFirst = true;
+  FocusNode focusNode = FocusNode();
   late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
@@ -81,42 +84,74 @@ class MapSampleState extends State<MapSample> {
     super.initState();
   }
 
+  void showFirst() {
+    setState(() {
+      isShowFirst = true;
+    });
+  }
+
+  void hideFirst() {
+    setState(() {
+      isShowFirst = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         alignment: Alignment.center,
         children: [
-          GoogleMap(
-            mapType: MapType.normal,
-            initialCameraPosition: _kGooglePlex,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            onTap: (argument) {
-              print('タップしました');
-            },
-            markers: {
-              Marker(
-                markerId: const MarkerId('test1'),
-                position: const LatLng(
-                  35.701314,
-                  140.029601,
-                ),
-                infoWindow: const InfoWindow(title: '交差点です'),
-                draggable: true,
-                icon: customMarkerIcon,
+          AnimatedCrossFade(
+            firstChild: SizedBox(
+              height: MediaQuery.sizeOf(context).height,
+              child: GoogleMap(
+                mapType: MapType.normal,
+                initialCameraPosition: _kGooglePlex,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: false,
+                onTap: (argument) {
+                  print('タップしました');
+                },
+                markers: {
+                  Marker(
+                    markerId: const MarkerId('test1'),
+                    position: const LatLng(
+                      35.701314,
+                      140.029601,
+                    ),
+                    infoWindow: const InfoWindow(title: '交差点です'),
+                    draggable: true,
+                    icon: customMarkerIcon,
+                  ),
+                  const Marker(
+                    markerId: MarkerId('test2'),
+                    position: LatLng(
+                      35.698905419103,
+                      140.0310452971,
+                    ),
+                  ),
+                },
+                onMapCreated: (GoogleMapController controller) {
+                  _controller = controller;
+                },
               ),
-              const Marker(
-                markerId: MarkerId('test2'),
-                position: LatLng(
-                  35.698905419103,
-                  140.0310452971,
-                ),
+            ),
+            secondChild: Container(
+              padding: const EdgeInsets.only(top: 80),
+              height: MediaQuery.sizeOf(context).height,
+              child: ListView.builder(
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(index.toString()),
+                  );
+                },
               ),
-            },
-            onMapCreated: (GoogleMapController controller) {
-              _controller = controller;
-            },
+            ),
+            crossFadeState: isShowFirst
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            duration: const Duration(milliseconds: 300),
           ),
           Positioned(
             top: 80,
@@ -136,10 +171,19 @@ class MapSampleState extends State<MapSample> {
               ),
               child: TextField(
                 controller: textEditingController,
+                focusNode: focusNode,
                 maxLines: 1,
                 decoration: InputDecoration(
                   hintText: 'ここで検索',
-                  prefixIcon: const Icon(Icons.pin_drop),
+                  prefixIcon: isShowFirst
+                      ? const Icon(Icons.pin_drop)
+                      : IconButton(
+                          onPressed: () {
+                            showFirst();
+                            focusNode.unfocus();
+                          },
+                          icon: const Icon(Icons.arrow_back),
+                        ),
                   suffixIcon: const Icon(Icons.mic),
                   fillColor: Colors.white,
                   filled: true,
@@ -149,9 +193,13 @@ class MapSampleState extends State<MapSample> {
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
+                onTap: () {
+                  hideFirst();
+                },
               ),
             ),
           ),
+          // GooglePlaceAutoCompleteTextField(textEditingController: textEditingController, googleAPIKey: googleAPIKey)
         ],
       ),
       floatingActionButton: FloatingActionButton(
