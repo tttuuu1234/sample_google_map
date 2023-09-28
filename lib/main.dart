@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
+import 'package:sample_google_map/model.dart';
 
 void main() => runApp(const MyApp());
 
@@ -36,6 +38,7 @@ class MapSampleState extends State<MapSample> {
   BitmapDescriptor customMarkerIcon = BitmapDescriptor.defaultMarker;
   bool isShowFirst = true;
   FocusNode focusNode = FocusNode();
+  var predictions = <PlaceModel>[];
   late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
@@ -141,9 +144,11 @@ class MapSampleState extends State<MapSample> {
               padding: const EdgeInsets.only(top: 80),
               height: MediaQuery.sizeOf(context).height,
               child: ListView.builder(
+                itemCount: predictions.length,
                 itemBuilder: (context, index) {
+                  final place = predictions[index];
                   return ListTile(
-                    title: Text(index.toString()),
+                    title: Text(place.mainText),
                   );
                 },
               ),
@@ -193,6 +198,18 @@ class MapSampleState extends State<MapSample> {
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
+                onChanged: (value) async {
+                  log('検索するよー');
+                  final response = await Dio().get(
+                    'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$value&key=$apiKey',
+                  );
+                  log(response.data['predictions'].toString());
+                  final list = response.data['predictions'] as List;
+                  setState(() {
+                    predictions =
+                        list.map((e) => PlaceModel.fromJson(e)).toList();
+                  });
+                },
                 onTap: () {
                   hideFirst();
                 },
