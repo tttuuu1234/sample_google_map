@@ -40,6 +40,7 @@ class MapSampleState extends State<MapSample> {
   FocusNode focusNode = FocusNode();
   var predictions = <PlaceModel>[];
   PlaceDetailModel? placeDetail;
+  Set<Marker> markers = {};
   late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
@@ -100,6 +101,17 @@ class MapSampleState extends State<MapSample> {
     });
   }
 
+  void addMarker(PlaceDetailModel placeDetail) {
+    setState(() {
+      markers.add(
+        Marker(
+          markerId: MarkerId(placeDetail.id),
+          position: LatLng(placeDetail.lat, placeDetail.lng),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,25 +129,7 @@ class MapSampleState extends State<MapSample> {
                 onTap: (argument) {
                   print('タップしました');
                 },
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('test1'),
-                    position: const LatLng(
-                      35.701314,
-                      140.029601,
-                    ),
-                    infoWindow: const InfoWindow(title: '交差点です'),
-                    draggable: true,
-                    icon: customMarkerIcon,
-                  ),
-                  const Marker(
-                    markerId: MarkerId('test2'),
-                    position: LatLng(
-                      35.698905419103,
-                      140.0310452971,
-                    ),
-                  ),
-                },
+                markers: markers,
                 onMapCreated: (GoogleMapController controller) {
                   _controller = controller;
                 },
@@ -161,6 +155,9 @@ class MapSampleState extends State<MapSample> {
                       });
                       log(placeDetail!.lat.toString());
                       log(placeDetail!.lng.toString());
+                      focusNode.unfocus();
+                      showFirst();
+                      addMarker(placeDetail!);
                     },
                   );
                 },
