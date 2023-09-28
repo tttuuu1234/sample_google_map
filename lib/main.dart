@@ -39,6 +39,7 @@ class MapSampleState extends State<MapSample> {
   bool isShowFirst = true;
   FocusNode focusNode = FocusNode();
   var predictions = <PlaceModel>[];
+  PlaceDetailModel? placeDetail;
   late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
@@ -149,6 +150,18 @@ class MapSampleState extends State<MapSample> {
                   final place = predictions[index];
                   return ListTile(
                     title: Text(place.mainText),
+                    onTap: () async {
+                      final response = await Dio().get(
+                        'https://maps.googleapis.com/maps/api/place/details/json?placeid=${place.id}&key=$apiKey',
+                      );
+                      setState(() {
+                        placeDetail = PlaceDetailModel.fromJson(
+                          response.data as Map<String, dynamic>,
+                        );
+                      });
+                      log(placeDetail!.lat.toString());
+                      log(placeDetail!.lng.toString());
+                    },
                   );
                 },
               ),
@@ -156,7 +169,7 @@ class MapSampleState extends State<MapSample> {
             crossFadeState: isShowFirst
                 ? CrossFadeState.showFirst
                 : CrossFadeState.showSecond,
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 200),
           ),
           Positioned(
             top: 80,
@@ -216,7 +229,6 @@ class MapSampleState extends State<MapSample> {
               ),
             ),
           ),
-          // GooglePlaceAutoCompleteTextField(textEditingController: textEditingController, googleAPIKey: googleAPIKey)
         ],
       ),
       floatingActionButton: FloatingActionButton(

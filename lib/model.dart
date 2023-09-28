@@ -1,17 +1,31 @@
 class PlaceModel {
-  const PlaceModel._({required this.mainText});
+  const PlaceModel._({required this.id, required this.mainText});
 
+  final String id;
   final String mainText;
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
     final structuredFormatting =
         json['structured_formatting'] as Map<String, dynamic>;
-    return PlaceModel._(mainText: structuredFormatting['main_text'].toString());
+    return PlaceModel._(
+      id: json['place_id'].toString(),
+      mainText: structuredFormatting['main_text'].toString(),
+    );
   }
 }
 
-class PlaceListModel {
-  const PlaceListModel({required this.list});
+class PlaceDetailModel {
+  const PlaceDetailModel._({required this.lat, required this.lng});
 
-  final List<PlaceModel> list;
+  final double lat;
+  final double lng;
+
+  factory PlaceDetailModel.fromJson(Map<String, dynamic> json) {
+    final result = json['result'] as Map<String, dynamic>;
+    final location = result['geometry']['location'] as Map<String, dynamic>;
+    return PlaceDetailModel._(
+      lat: location['lat'] as double,
+      lng: location['lng'] as double,
+    );
+  }
 }
