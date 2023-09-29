@@ -161,6 +161,15 @@ class MapSampleState extends State<MapSample> {
                       if (!context.mounted) {
                         return;
                       }
+
+                      await _controller.animateCamera(
+                        CameraUpdate.newCameraPosition(
+                          CameraPosition(
+                            target: LatLng(placeDetail!.lat, placeDetail!.lng),
+                            zoom: 16,
+                          ),
+                        ),
+                      );
                     },
                   );
                 },
@@ -229,7 +238,7 @@ class MapSampleState extends State<MapSample> {
               ),
             ),
           ),
-          if (placeDetail != null)
+          if (isShowFirst && placeDetail != null)
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
@@ -252,10 +261,12 @@ class MapSampleState extends State<MapSample> {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async => await _zoomCameraLocationToCenter(),
-        child: const Icon(Icons.location_on),
-      ),
+      floatingActionButton: isShowFirst
+          ? FloatingActionButton(
+              onPressed: () async => await _zoomCameraLocationToCenter(),
+              child: const Icon(Icons.location_on),
+            )
+          : null,
     );
   }
 
