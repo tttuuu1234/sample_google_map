@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
@@ -41,6 +42,7 @@ class MapSampleState extends State<MapSample> {
   var predictions = <PlaceModel>[];
   PlaceDetailModel? placeDetail;
   Set<Marker> markers = {};
+  Set<Polyline> polyLines = {};
   late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
@@ -130,6 +132,7 @@ class MapSampleState extends State<MapSample> {
                   print('タップしました');
                 },
                 markers: markers,
+                polylines: polyLines,
                 onMapCreated: (GoogleMapController controller) {
                   _controller = controller;
                 },
@@ -252,7 +255,41 @@ class MapSampleState extends State<MapSample> {
                   children: [
                     Text(placeDetail == null ? '' : placeDetail!.name),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        // const travelMode = 'walking';
+                        // final response = await Dio().get(
+                        //   "https://maps.googleapis.com/maps/api/directions/json?origin=35.701314,140.029601&destination=${placeDetail!.lat},${placeDetail!.lng}&mode=$travelMode&key=$apiKey",
+                        // );
+
+                        const origin = PointLatLng(35.701314, 140.029601);
+                        final destination =
+                            PointLatLng(placeDetail!.lat, placeDetail!.lng);
+                        final response =
+                            await PolylinePoints().getRouteBetweenCoordinates(
+                          apiKey,
+                          origin,
+                          destination,
+                          travelMode: TravelMode.walking,
+                        );
+
+                        log(response.toString());
+                        log(response.points.length.toString());
+                        final points = response.points.map((e) {
+                          print('緯度、経度');
+                          final latlng = LatLng(e.latitude, e.longitude);
+                          print(latlng.latitude);
+                          print(latlng.longitude);
+                          return latlng;
+                        }).toList();
+                        final poliLine = Polyline(
+                          polylineId: PolylineId('idです'),
+                          points: points,
+                          color: Colors.red,
+                        );
+                        setState(() {
+                          polyLines.add(poliLine);
+                        });
+                      },
                       child: const Text('経路'),
                     ),
                   ],
