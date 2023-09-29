@@ -17,11 +17,13 @@ class PlaceModel {
 class PlaceDetailModel {
   const PlaceDetailModel._({
     required this.id,
+    required this.name,
     required this.lat,
     required this.lng,
   });
 
   final String id;
+  final String name;
   final double lat;
   final double lng;
 
@@ -30,6 +32,7 @@ class PlaceDetailModel {
     final location = result['geometry']['location'] as Map<String, dynamic>;
     return PlaceDetailModel._(
       id: result['place_id'].toString(),
+      name: result['name'].toString(),
       lat: location['lat'] as double,
       lng: location['lng'] as double,
     );

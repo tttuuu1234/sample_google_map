@@ -158,6 +158,9 @@ class MapSampleState extends State<MapSample> {
                       focusNode.unfocus();
                       showFirst();
                       addMarker(placeDetail!);
+                      if (!context.mounted) {
+                        return;
+                      }
                     },
                   );
                 },
@@ -226,6 +229,27 @@ class MapSampleState extends State<MapSample> {
               ),
             ),
           ),
+          if (placeDetail != null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: MediaQuery.sizeOf(context).height * 0.4,
+                width: MediaQuery.sizeOf(context).width,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  children: [
+                    Text(placeDetail == null ? '' : placeDetail!.name),
+                    ElevatedButton(
+                      onPressed: () {},
+                      child: const Text('経路'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
