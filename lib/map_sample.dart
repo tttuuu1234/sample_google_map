@@ -27,7 +27,6 @@ class MapSampleState extends State<MapSample> {
   late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
-  final stopwatch = Stopwatch();
   final apiKey = const String.fromEnvironment('iosGoogleMapApiKey');
   //初期位置
   late CameraPosition _kGooglePlex;
@@ -37,6 +36,8 @@ class MapSampleState extends State<MapSample> {
   );
   bool isRecordingWalk = false;
   bool isLoading = false;
+  Timer? timer;
+  var time = DateTime.utc(0, 0, 0);
 
   @override
   void initState() {
@@ -130,14 +131,6 @@ class MapSampleState extends State<MapSample> {
     setState(() {
       isRecordingWalk = false;
     });
-  }
-
-  void startWatch() {
-    stopwatch.start();
-  }
-
-  void finishWatch() {
-    stopwatch.stop();
   }
 
   @override
@@ -331,8 +324,9 @@ class MapSampleState extends State<MapSample> {
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child:
-                  Center(child: Text(stopwatch.elapsedMilliseconds.toString())),
+              child: Center(
+                child: Text(time.second.toString()),
+              ),
             )
           : null,
       floatingActionButton: isShowFirst
@@ -358,7 +352,17 @@ class MapSampleState extends State<MapSample> {
                             TextButton(
                               onPressed: () {
                                 startRecordWalking();
-                                startWatch();
+                                timer = Timer.periodic(
+                                  const Duration(seconds: 1),
+                                  (value) {
+                                    print('タイマー');
+                                    setState(() {
+                                      time = time.add(
+                                        const Duration(seconds: 1),
+                                      );
+                                    });
+                                  },
+                                );
                                 Navigator.pop(context);
                               },
                               child: const Text('OK'),
