@@ -27,6 +27,7 @@ class MapSampleState extends State<MapSample> {
   late TextEditingController textEditingController;
   late GoogleMapController _controller;
   late StreamSubscription<Position> positionStream;
+  final stopwatch = Stopwatch();
   final apiKey = const String.fromEnvironment('iosGoogleMapApiKey');
   //初期位置
   late CameraPosition _kGooglePlex;
@@ -34,6 +35,7 @@ class MapSampleState extends State<MapSample> {
     accuracy: LocationAccuracy.high,
     distanceFilter: 100,
   );
+  bool isRecordingWalk = false;
   bool isLoading = false;
 
   @override
@@ -73,6 +75,7 @@ class MapSampleState extends State<MapSample> {
       locationSettings: locationSettings,
     ).listen((position) {
       currentPosition = position;
+      print('位置情報のリアルタイム取得中');
       print(
         '${position.latitude.toString()}, ${position.longitude.toString()}',
       );
@@ -115,6 +118,26 @@ class MapSampleState extends State<MapSample> {
     setState(() {
       isLoading = false;
     });
+  }
+
+  void startRecordWalking() {
+    setState(() {
+      isRecordingWalk = true;
+    });
+  }
+
+  void finishRecordWalking() {
+    setState(() {
+      isRecordingWalk = false;
+    });
+  }
+
+  void startWatch() {
+    stopwatch.start();
+  }
+
+  void finishWatch() {
+    stopwatch.stop();
   }
 
   @override
@@ -284,7 +307,7 @@ class MapSampleState extends State<MapSample> {
                                 return latlng;
                               }).toList();
                               final poliLine = Polyline(
-                                polylineId: PolylineId('idです'),
+                                polylineId: const PolylineId('idです'),
                                 points: points,
                                 color: Colors.red,
                               );
@@ -300,10 +323,61 @@ class MapSampleState extends State<MapSample> {
                   ),
               ],
             ),
+      bottomSheet: isRecordingWalk
+          ? Container(
+              height: MediaQuery.sizeOf(context).height * 0.2,
+              width: MediaQuery.sizeOf(context).width,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child:
+                  Center(child: Text(stopwatch.elapsedMilliseconds.toString())),
+            )
+          : null,
       floatingActionButton: isShowFirst
-          ? FloatingActionButton(
-              onPressed: () async => await _zoomCameraLocationToCenter(),
-              child: const Icon(Icons.location_on),
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FloatingActionButton(
+                  onPressed: () async {
+                    await showAdaptiveDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog.adaptive(
+                          title: const Text(
+                            'ウォーキングの記録を開始しますが、よろしいでしょうか？',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('CANCEL'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                startRecordWalking();
+                                startWatch();
+                                Navigator.pop(context);
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: Icon(
+                    isRecordingWalk ? Icons.stop_circle : Icons.directions_walk,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FloatingActionButton(
+                  onPressed: () async => await _zoomCameraLocationToCenter(),
+                  child: const Icon(Icons.location_on),
+                ),
+              ],
             )
           : null,
     );
