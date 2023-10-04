@@ -74,16 +74,19 @@ class MapSampleState extends State<MapSample> {
     });
     positionStream = Geolocator.getPositionStream(
       locationSettings: locationSettings,
-    ).listen((position) {
-      currentPosition = position;
-      print('位置情報のリアルタイム取得中');
-      print(
-        '${position.latitude.toString()}, ${position.longitude.toString()}',
-      );
-    }, onError: (error) {
-      print('エラーです');
-      print(error);
-    });
+    ).listen(
+      (position) {
+        currentPosition = position;
+        print('位置情報のリアルタイム取得中');
+        print(
+          '${position.latitude.toString()}, ${position.longitude.toString()}',
+        );
+      },
+      onError: (error) {
+        print('エラーです');
+        print(error);
+      },
+    );
   }
 
   void showFirst() {
@@ -190,7 +193,9 @@ class MapSampleState extends State<MapSample> {
                               CameraUpdate.newCameraPosition(
                                 CameraPosition(
                                   target: LatLng(
-                                      placeDetail!.lat, placeDetail!.lng),
+                                    placeDetail!.lat,
+                                    placeDetail!.lng,
+                                  ),
                                   zoom: 16,
                                 ),
                               ),
@@ -282,7 +287,9 @@ class MapSampleState extends State<MapSample> {
                             onPressed: () async {
                               const origin = PointLatLng(35.701314, 140.029601);
                               final destination = PointLatLng(
-                                  placeDetail!.lat, placeDetail!.lng);
+                                placeDetail!.lat,
+                                placeDetail!.lng,
+                              );
                               final response = await PolylinePoints()
                                   .getRouteBetweenCoordinates(
                                 apiKey,
