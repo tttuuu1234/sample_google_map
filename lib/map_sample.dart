@@ -271,8 +271,9 @@ class MapSampleState extends State<MapSample> {
                       width: MediaQuery.sizeOf(context).width,
                       decoration: const BoxDecoration(
                         color: Colors.white,
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(24)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -334,44 +335,7 @@ class MapSampleState extends State<MapSample> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 FloatingActionButton(
-                  onPressed: () async {
-                    await showAdaptiveDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog.adaptive(
-                          title: const Text(
-                            'ウォーキングの記録を開始しますが、よろしいでしょうか？',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text('CANCEL'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                startRecordWalking();
-                                timer = Timer.periodic(
-                                  const Duration(seconds: 1),
-                                  (value) {
-                                    print('タイマー');
-                                    setState(() {
-                                      time = time.add(
-                                        const Duration(seconds: 1),
-                                      );
-                                    });
-                                  },
-                                );
-                                Navigator.pop(context);
-                              },
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                  onPressed: () async => await _showRecordWalkingDialog(),
                   child: Icon(
                     isRecordingWalk ? Icons.stop_circle : Icons.directions_walk,
                   ),
@@ -405,5 +369,96 @@ class MapSampleState extends State<MapSample> {
       print('エラーーーーー');
       print(e);
     }
+  }
+
+  /// 歩数記録開始・停止確認ダイアログの表示
+  Future<void> _showRecordWalkingDialog() async {
+    await showAdaptiveDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        if (isRecordingWalk) {
+          return WalkingRecordStopDialog(
+            onPressed: () {
+              finishRecordWalking();
+              timer!.cancel();
+              Navigator.pop(context);
+            },
+          );
+        }
+
+        return WalkingRecordStartDialog(
+          onPressed: () {
+            startRecordWalking();
+            timer = Timer.periodic(
+              const Duration(seconds: 1),
+              (value) {
+                print('タイマー');
+                setState(() {
+                  time = time.add(
+                    const Duration(seconds: 1),
+                  );
+                });
+              },
+            );
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
+  }
+}
+
+class WalkingRecordStartDialog extends StatelessWidget {
+  const WalkingRecordStartDialog({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog.adaptive(
+      title: const Text(
+        'ウォーキングの記録を開始しますが、よろしいでしょうか？',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('CANCEL'),
+        ),
+        TextButton(
+          onPressed: onPressed,
+          child: const Text('OK'),
+        ),
+      ],
+    );
+  }
+}
+
+class WalkingRecordStopDialog extends StatelessWidget {
+  const WalkingRecordStopDialog({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog.adaptive(
+      title: const Text(
+        'ウォーキングの記録を停止しますが、よろしいでしょうか？',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('CANCEL'),
+        ),
+        TextButton(
+          onPressed: onPressed,
+          child: const Text('OK'),
+        ),
+      ],
+    );
   }
 }
