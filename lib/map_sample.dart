@@ -300,6 +300,10 @@ class MapSampleState extends State<MapSample> {
 
                               log(response.toString());
                               log(response.points.length.toString());
+                              log(response.distance ?? '');
+                              log(response.distanceText ?? '');
+                              log(response.distanceValue.toString());
+                              log(response.durationValue.toString());
                               final points = response.points.map((e) {
                                 print('緯度、経度');
                                 final latlng = LatLng(e.latitude, e.longitude);
