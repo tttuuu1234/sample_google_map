@@ -7,6 +7,8 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sample_google_map/model.dart';
+import 'package:sample_google_map/walking_record_confirm_page.dart';
+import 'package:uuid/uuid.dart';
 
 class MapSample extends StatefulWidget {
   const MapSample({Key? key}) : super(key: key);
@@ -32,13 +34,17 @@ class MapSampleState extends State<MapSample> {
   late CameraPosition _kGooglePlex;
   final locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.high,
-    distanceFilter: 100,
+    distanceFilter: 5,
   );
   bool isRecordingWalk = false;
   bool isLoading = false;
   Timer? timer;
   var time = DateTime.utc(0, 0, 0);
-  Polyline? _polyline;
+  var _walkingPolyline = const Polyline(
+    polylineId: PolylineId('walking'),
+    points: [],
+    color: Colors.blue,
+  );
 
   @override
   void initState() {
@@ -70,6 +76,7 @@ class MapSampleState extends State<MapSample> {
           ),
           zoom: 16,
         );
+        currentPosition = value;
       });
       finishLoading();
     });
@@ -82,12 +89,32 @@ class MapSampleState extends State<MapSample> {
         print(
           '${position.latitude.toString()}, ${position.longitude.toString()}',
         );
+
+        setState(() {
+          _walkingPolyline = _walkingPolyline.copyWith(
+            pointsParam: [
+              ..._walkingPolyline.points,
+              LatLng(
+                currentPosition!.latitude,
+                currentPosition!.longitude,
+              ),
+            ],
+          );
+          print(_walkingPolyline.mapsId);
+          print(_walkingPolyline.points);
+          polyLines.add(_walkingPolyline);
+        });
+
+        for (var element in polyLines) {
+          print(element.points);
+        }
       },
       onError: (error) {
         print('エラーです');
         print(error);
       },
     );
+    positionStream.pause();
   }
 
   void showFirst() {
@@ -192,7 +219,7 @@ class MapSampleState extends State<MapSample> {
                     child: _buildSearchTextField(),
                   ),
                 ),
-                if (isShowFirst && placeDetail != null)
+                if (isShowFirst && placeDetail != null && !isRecordingWalk)
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: Container(
@@ -224,8 +251,13 @@ class MapSampleState extends State<MapSample> {
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: Center(
-                child: Text(time.second.toString()),
+              child: Column(
+                children: [
+                  Text('${currentPosition!.latitude}'),
+                  Center(
+                    child: Text(time.second.toString()),
+                  ),
+                ],
               ),
             )
           : null,
@@ -255,17 +287,17 @@ class MapSampleState extends State<MapSample> {
       onPressed: () {
         // final targetPoints = _polyline!.points;
         final targetPoints = [
-          LatLng(35.70133, 140.02959),
-          LatLng(35.7013, 140.02947),
-          LatLng(35.70125, 140.02947),
-          LatLng(35.70106, 140.02924),
-          LatLng(35.70086, 140.029),
-          LatLng(35.70068, 140.02878),
-          LatLng(35.70079, 140.02864),
-          LatLng(35.70099, 140.02841),
-          LatLng(35.70094, 140.02835),
-          LatLng(35.70103, 140.02823),
-          LatLng(35.70118, 140.02806),
+          const LatLng(35.70133, 140.02959),
+          const LatLng(35.7013, 140.02947),
+          const LatLng(35.70125, 140.02947),
+          const LatLng(35.70106, 140.02924),
+          const LatLng(35.70086, 140.029),
+          const LatLng(35.70068, 140.02878),
+          const LatLng(35.70079, 140.02864),
+          const LatLng(35.70099, 140.02841),
+          const LatLng(35.70094, 140.02835),
+          const LatLng(35.70103, 140.02823),
+          const LatLng(35.70118, 140.02806),
         ];
         final polyline = Polyline(
           polylineId: const PolylineId('2'),
@@ -278,21 +310,20 @@ class MapSampleState extends State<MapSample> {
         });
         print(polyLines.length);
       },
-      child: Text('ウォーキング経路'),
+      child: const Text('ウォーキング経路'),
     );
   }
 
   ElevatedButton _buildRouteButton() {
     return ElevatedButton(
       onPressed: () async {
-        const origin = PointLatLng(35.701314, 140.029601);
         final destination = PointLatLng(
           placeDetail!.lat,
           placeDetail!.lng,
         );
         final response = await PolylinePoints().getRouteBetweenCoordinates(
           apiKey,
-          origin,
+          PointLatLng(currentPosition!.latitude, currentPosition!.longitude),
           destination,
           travelMode: TravelMode.walking,
         );
@@ -311,13 +342,13 @@ class MapSampleState extends State<MapSample> {
           return latlng;
         }).toList();
         print(points);
-        _polyline = Polyline(
-          polylineId: const PolylineId('1'),
+        final polyline = Polyline(
+          polylineId: const PolylineId('target'),
           points: points,
           color: Colors.red,
         );
         setState(() {
-          polyLines.add(_polyline!);
+          polyLines.add(polyline);
         });
       },
       child: const Text('経路'),
@@ -437,9 +468,17 @@ class MapSampleState extends State<MapSample> {
         if (isRecordingWalk) {
           return WalkingRecordStopDialog(
             onPressed: () {
+              positionStream.cancel();
               finishRecordWalking();
               timer!.cancel();
               Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => WalkingRecordConfirmPage(
+                    walkingPolyline: _walkingPolyline,
+                  ),
+                ),
+              );
             },
           );
         }
@@ -447,6 +486,7 @@ class MapSampleState extends State<MapSample> {
         return WalkingRecordStartDialog(
           onPressed: () {
             startRecordWalking();
+            positionStream.resume();
             timer = Timer.periodic(
               const Duration(seconds: 1),
               (value) {
