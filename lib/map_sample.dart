@@ -38,6 +38,7 @@ class MapSampleState extends State<MapSample> {
   bool isLoading = false;
   Timer? timer;
   var time = DateTime.utc(0, 0, 0);
+  Polyline? _polyline;
 
   @override
   void initState() {
@@ -165,45 +166,7 @@ class MapSampleState extends State<MapSample> {
                   secondChild: Container(
                     padding: const EdgeInsets.only(top: 80),
                     height: MediaQuery.sizeOf(context).height,
-                    child: ListView.builder(
-                      itemCount: predictions.length,
-                      itemBuilder: (context, index) {
-                        final place = predictions[index];
-                        return ListTile(
-                          title: Text(place.mainText),
-                          onTap: () async {
-                            final response = await Dio().get(
-                              'https://maps.googleapis.com/maps/api/place/details/json?placeid=${place.id}&key=$apiKey',
-                            );
-                            setState(() {
-                              placeDetail = PlaceDetailModel.fromJson(
-                                response.data as Map<String, dynamic>,
-                              );
-                            });
-                            log(placeDetail!.lat.toString());
-                            log(placeDetail!.lng.toString());
-                            focusNode.unfocus();
-                            showFirst();
-                            addMarker(placeDetail!);
-                            if (!context.mounted) {
-                              return;
-                            }
-
-                            await _controller.animateCamera(
-                              CameraUpdate.newCameraPosition(
-                                CameraPosition(
-                                  target: LatLng(
-                                    placeDetail!.lat,
-                                    placeDetail!.lng,
-                                  ),
-                                  zoom: 16,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                    child: _buildPlaceListView(),
                   ),
                   crossFadeState: isShowFirst
                       ? CrossFadeState.showFirst
@@ -226,46 +189,7 @@ class MapSampleState extends State<MapSample> {
                         ),
                       ],
                     ),
-                    child: TextField(
-                      controller: textEditingController,
-                      focusNode: focusNode,
-                      maxLines: 1,
-                      decoration: InputDecoration(
-                        hintText: 'ここで検索',
-                        prefixIcon: isShowFirst
-                            ? const Icon(Icons.pin_drop)
-                            : IconButton(
-                                onPressed: () {
-                                  showFirst();
-                                  focusNode.unfocus();
-                                },
-                                icon: const Icon(Icons.arrow_back),
-                              ),
-                        suffixIcon: const Icon(Icons.mic),
-                        fillColor: Colors.white,
-                        filled: true,
-                        contentPadding: EdgeInsets.zero,
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide.none,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      onChanged: (value) async {
-                        log('検索するよー');
-                        final response = await Dio().get(
-                          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$value&key=$apiKey',
-                        );
-                        log(response.data['predictions'].toString());
-                        final list = response.data['predictions'] as List;
-                        setState(() {
-                          predictions =
-                              list.map((e) => PlaceModel.fromJson(e)).toList();
-                        });
-                      },
-                      onTap: () {
-                        hideFirst();
-                      },
-                    ),
+                    child: _buildSearchTextField(),
                   ),
                 ),
                 if (isShowFirst && placeDetail != null)
@@ -281,47 +205,11 @@ class MapSampleState extends State<MapSample> {
                         ),
                       ),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(placeDetail == null ? '' : placeDetail!.name),
-                          ElevatedButton(
-                            onPressed: () async {
-                              const origin = PointLatLng(35.701314, 140.029601);
-                              final destination = PointLatLng(
-                                placeDetail!.lat,
-                                placeDetail!.lng,
-                              );
-                              final response = await PolylinePoints()
-                                  .getRouteBetweenCoordinates(
-                                apiKey,
-                                origin,
-                                destination,
-                                travelMode: TravelMode.walking,
-                              );
-
-                              log(response.toString());
-                              log(response.points.length.toString());
-                              log(response.distance ?? '');
-                              log(response.distanceText ?? '');
-                              log(response.distanceValue.toString());
-                              log(response.durationValue.toString());
-                              final points = response.points.map((e) {
-                                print('緯度、経度');
-                                final latlng = LatLng(e.latitude, e.longitude);
-                                print(latlng.latitude);
-                                print(latlng.longitude);
-                                return latlng;
-                              }).toList();
-                              final poliLine = Polyline(
-                                polylineId: const PolylineId('idです'),
-                                points: points,
-                                color: Colors.red,
-                              );
-                              setState(() {
-                                polyLines.add(poliLine);
-                              });
-                            },
-                            child: const Text('経路'),
-                          ),
+                          _buildRouteButton(),
+                          _buildWalkingRouteButton(),
                         ],
                       ),
                     ),
@@ -359,6 +247,164 @@ class MapSampleState extends State<MapSample> {
               ],
             )
           : null,
+    );
+  }
+
+  ElevatedButton _buildWalkingRouteButton() {
+    return ElevatedButton(
+      onPressed: () {
+        // final targetPoints = _polyline!.points;
+        final targetPoints = [
+          LatLng(35.70133, 140.02959),
+          LatLng(35.7013, 140.02947),
+          LatLng(35.70125, 140.02947),
+          LatLng(35.70106, 140.02924),
+          LatLng(35.70086, 140.029),
+          LatLng(35.70068, 140.02878),
+          LatLng(35.70079, 140.02864),
+          LatLng(35.70099, 140.02841),
+          LatLng(35.70094, 140.02835),
+          LatLng(35.70103, 140.02823),
+          LatLng(35.70118, 140.02806),
+        ];
+        final polyline = Polyline(
+          polylineId: const PolylineId('2'),
+          points: targetPoints,
+          color: Colors.blue,
+        );
+
+        setState(() {
+          polyLines.add(polyline);
+        });
+        print(polyLines.length);
+      },
+      child: Text('ウォーキング経路'),
+    );
+  }
+
+  ElevatedButton _buildRouteButton() {
+    return ElevatedButton(
+      onPressed: () async {
+        const origin = PointLatLng(35.701314, 140.029601);
+        final destination = PointLatLng(
+          placeDetail!.lat,
+          placeDetail!.lng,
+        );
+        final response = await PolylinePoints().getRouteBetweenCoordinates(
+          apiKey,
+          origin,
+          destination,
+          travelMode: TravelMode.walking,
+        );
+
+        log(response.toString());
+        log(response.points.length.toString());
+        log(response.distance ?? '');
+        log(response.distanceText ?? '');
+        log(response.distanceValue.toString());
+        log(response.durationValue.toString());
+        final points = response.points.map((e) {
+          print('緯度、経度');
+          final latlng = LatLng(e.latitude, e.longitude);
+          print(latlng.latitude);
+          print(latlng.longitude);
+          return latlng;
+        }).toList();
+        print(points);
+        _polyline = Polyline(
+          polylineId: const PolylineId('1'),
+          points: points,
+          color: Colors.red,
+        );
+        setState(() {
+          polyLines.add(_polyline!);
+        });
+      },
+      child: const Text('経路'),
+    );
+  }
+
+  TextField _buildSearchTextField() {
+    return TextField(
+      controller: textEditingController,
+      focusNode: focusNode,
+      maxLines: 1,
+      decoration: InputDecoration(
+        hintText: 'ここで検索',
+        prefixIcon: isShowFirst
+            ? const Icon(Icons.pin_drop)
+            : IconButton(
+                onPressed: () {
+                  showFirst();
+                  focusNode.unfocus();
+                },
+                icon: const Icon(Icons.arrow_back),
+              ),
+        suffixIcon: const Icon(Icons.mic),
+        fillColor: Colors.white,
+        filled: true,
+        contentPadding: EdgeInsets.zero,
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
+      onChanged: (value) async {
+        log('検索するよー');
+        final response = await Dio().get(
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$value&key=$apiKey',
+        );
+        log(response.data['predictions'].toString());
+        final list = response.data['predictions'] as List;
+        setState(() {
+          predictions = list.map((e) => PlaceModel.fromJson(e)).toList();
+        });
+      },
+      onTap: () {
+        hideFirst();
+      },
+    );
+  }
+
+  ListView _buildPlaceListView() {
+    return ListView.builder(
+      itemCount: predictions.length,
+      itemBuilder: (context, index) {
+        final place = predictions[index];
+        return ListTile(
+          title: Text(place.mainText),
+          onTap: () async {
+            final response = await Dio().get(
+              'https://maps.googleapis.com/maps/api/place/details/json?placeid=${place.id}&key=$apiKey',
+            );
+            setState(() {
+              placeDetail = PlaceDetailModel.fromJson(
+                response.data as Map<String, dynamic>,
+              );
+            });
+            log(placeDetail!.lat.toString());
+            log(placeDetail!.lng.toString());
+            focusNode.unfocus();
+            showFirst();
+            addMarker(placeDetail!);
+            if (!context.mounted) {
+              return;
+            }
+
+            await _controller.animateCamera(
+              CameraUpdate.newCameraPosition(
+                CameraPosition(
+                  target: LatLng(
+                    placeDetail!.lat,
+                    placeDetail!.lng,
+                  ),
+                  zoom: 16,
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
